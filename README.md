@@ -81,4 +81,4 @@
 
 ### Live Demo 
 
-Check out the live demo of Reporadar: https://reporadar.example.com
+Check out the live demo of Reporadar: https://reporadar-nu.vercel.app/
