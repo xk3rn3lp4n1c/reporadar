@@ -45,7 +45,6 @@ const SearchRepo = () => {
   const [pullRequestComments, _setPullRequestComments] = useState<any[]>([]); // State for pull request comments
   const [repoImageUrl, setRepoImageUrl] = useState<string | null>(null); // State for repo image
 
-  const GITHUB_TOKEN = import.meta.env.VITE_GITHUB_TOKEN;
   const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
   const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
 
@@ -139,104 +138,124 @@ const SearchRepo = () => {
     setError(null);
 
     try {
+      // Validate inputs
+      if (!owner || !repoName) {
+        throw new Error("Repository owner and name are required");
+      }
+
+      const GITHUB_TOKEN = import.meta.env.VITE_GITHUB_TOKEN;
+
+      if (!GITHUB_TOKEN) {
+        throw new Error("GitHub token is not configured");
+      }
+
+      const config = {
+        headers: {
+          Accept: "application/vnd.github.v3+json",
+          Authorization: `${GITHUB_TOKEN}`,
+        },
+      };
+
+      // Basic repository info
       const repoResponse = await axios.get(
         `https://api.github.com/repos/${owner}/${repoName}`,
-        {
-          headers: {
-            Accept: "application/vnd.github.v3+json",
-            Authorization: `Bearer ${GITHUB_TOKEN}`, // Always add authorization since we need it for private repos
-          },
-        }
+        config
       );
       setRepo(repoResponse.data);
 
-      const ownerResponse = await axios.get(
-        `https://api.github.com/users/${owner}`,
-        {
-          headers: {
-            Authorization: `token ${GITHUB_TOKEN}`,
-          },
-        }
-      );
-      setOwnerInfo(ownerResponse.data);
-
-      const languagesResponse = await axios.get(
-        `https://api.github.com/repos/${owner}/${repoName}/languages`,
-        {
-          headers: {
-            Authorization: `token ${GITHUB_TOKEN}`,
-          },
-        }
-      );
-      setLanguages(languagesResponse.data);
-
-      const issuesResponse = await axios.get(
-        `https://api.github.com/repos/${owner}/${repoName}/issues`,
-        {
-          headers: {
-            Authorization: `token ${GITHUB_TOKEN}`,
-          },
-        }
-      );
-      setIssues(issuesResponse.data);
-
-      const pullRequestsResponse = await axios.get(
-        `https://api.github.com/repos/${owner}/${repoName}/pulls`,
-        {
-          headers: {
-            Authorization: `token ${GITHUB_TOKEN}`,
-          },
-        }
-      );
-      setPullRequests(pullRequestsResponse.data);
-
-      const releasesResponse = await axios.get(
-        `https://api.github.com/repos/${owner}/${repoName}/releases`,
-        {
-          headers: {
-            Authorization: `token ${GITHUB_TOKEN}`,
-          },
-        }
-      );
-      setReleases(releasesResponse.data);
-
-      const readmeResponse = await axios.get(
-        `https://api.github.com/repos/${owner}/${repoName}/readme`,
-        {
-          headers: {
-            Authorization: `token ${GITHUB_TOKEN}`,
-            Accept: "application/vnd.github.v3.raw",
-          },
-        }
-      );
-      setReadme(readmeResponse.data);
-
-      const licenseResponse = await axios.get(
-        `https://api.github.com/repos/${owner}/${repoName}/license`,
-        {
-          headers: {
-            Authorization: `token ${GITHUB_TOKEN}`,
-          },
-        }
-      );
-      setLicense(licenseResponse.data);
-      // Fetch repository image
-      const imageUrl = `https://opengraph.githubassets.com/${owner}/${repoName}`;
-      setRepoImageUrl(imageUrl);
-
-      if (repoResponse.data.private === false) {
-        setChatMessages([
-          {
-            role: "ai",
-            text: `Hello! You can ask me anything about the repository "${repoResponse.data.full_name}".`,
-          },
+      // Only proceed if repository exists and we have access
+      if (repoResponse.data) {
+        // Parallel requests for better performance
+        const [
+          ownerResponse,
+          languagesResponse,
+          issuesResponse,
+          pullRequestsResponse,
+          releasesResponse,
+          readmeResponse,
+          licenseResponse,
+        ] = await Promise.all([
+          axios.get(`https://api.github.com/users/${owner}`, config),
+          axios.get(
+            `https://api.github.com/repos/${owner}/${repoName}/languages`,
+            config
+          ),
+          axios.get(
+            `https://api.github.com/repos/${owner}/${repoName}/issues`,
+            config
+          ),
+          axios.get(
+            `https://api.github.com/repos/${owner}/${repoName}/pulls`,
+            config
+          ),
+          axios.get(
+            `https://api.github.com/repos/${owner}/${repoName}/releases`,
+            config
+          ),
+          axios.get(
+            `https://api.github.com/repos/${owner}/${repoName}/readme`,
+            {
+              headers: {
+                ...config.headers,
+                Accept: "application/vnd.github.v3.raw",
+              },
+            }
+          ),
+          axios.get(
+            `https://api.github.com/repos/${owner}/${repoName}/license`,
+            config
+          ),
         ]);
+
+        // Set all the state values
+        setOwnerInfo(ownerResponse.data);
+        setLanguages(languagesResponse.data);
+        setIssues(issuesResponse.data);
+        setPullRequests(pullRequestsResponse.data);
+        setReleases(releasesResponse.data);
+        setReadme(readmeResponse.data);
+        setLicense(licenseResponse.data);
+
+        // Construct proper Open Graph image URL
+        const imageUrl = `https://opengraph.githubassets.com/1/${owner}/${repoName}`;
+        setRepoImageUrl(imageUrl);
+
+        // Set welcome message for public repositories
+        if (!repoResponse.data.private) {
+          setChatMessages([
+            {
+              role: "ai",
+              text: `Hello! You can ask me anything about the repository "${repoResponse.data.full_name}".`,
+            },
+          ]);
+        }
       }
-    } catch (err) {
-      setError(
-        "Failed to fetch repository details. Please check the URL and try again."
-      );
-      console.error(err);
+    } catch (error: any) {
+      // More specific error handling
+      if (error.response) {
+        switch (error.response.status) {
+          case 404:
+            setError(
+              "Repository not found. Please check the owner and repository name."
+            );
+            break;
+          case 401:
+            setError("Authentication failed. Please check your GitHub token.");
+            break;
+          case 403:
+            setError("API rate limit exceeded or insufficient permissions.");
+            break;
+          default:
+            setError(
+              `Failed to fetch repository details: ${error.response.data.message}`
+            );
+        }
+      } else if (error.request) {
+        setError("Network error. Please check your internet connection.");
+      } else {
+        setError(error.message || "An unexpected error occurred.");
+      }
+      console.error("GitHub API Error:", error);
     } finally {
       setLoading(false);
     }
