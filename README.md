@@ -22,7 +22,7 @@
 
 - Node.js (v16 or higher)
 - npm or yarn
-- GitHub API token (for accessing private repositories)
+- GitHub API token (for accessing your private repositories)
 
 ### Installation
 
