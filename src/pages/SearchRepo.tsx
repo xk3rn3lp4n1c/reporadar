@@ -616,7 +616,7 @@ const SearchRepo = () => {
       {isChatOpen && (
         <div className="fixed inset-0 bottom-0 w-full h-full md:bottom-20 md:right-6 md:h-full md:w-96 bg-white md:border border-gray-200 md:rounded-lg shadow-lg flex flex-col z-50 md:max-h-[50%] overflow-hidden md:r md:inset-auto">
           <div className="p-4 bg-primary text-white flex flex-row justify-between items-center">
-            <h3 className="text-base">Chat with Git Tracker</h3>
+            <h3 className="text-base">Chat with Reporadar</h3>
             <button type="button" onClick={() => setIsChatOpen(!isChatOpen)}>
               <Cancel01Icon className="w-4 h-4" />
             </button>
