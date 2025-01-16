@@ -25,9 +25,9 @@ const Navbar = () => {
           } place-items-center bg-background z-10 lg:flex lg:static lg:bg-transparent lg:z-auto`}
         >
           <div className="grid place-items-center gap-2 lg:flex lg:gap-8 lg:items-center">
-            
             <Link
-              to="/"
+              to="https://github.com/xk3rn3lp4n1c/reporadar"
+              target="_blank"
               className="text-sm rounded-full text-primary-foreground p-2 bg-primary px-4 shadow"
             >
               Fork on GitHub{" "}
