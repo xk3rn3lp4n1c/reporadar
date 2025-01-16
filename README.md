@@ -16,13 +16,6 @@
 
 ---
 
-## Screenshots
-
-![Reporadar Screenshot](https://via.placeholder.com/800x400)  
-*Add a screenshot of your app here.*
-
----
-
 ## Getting Started
 
 ### Prerequisites
