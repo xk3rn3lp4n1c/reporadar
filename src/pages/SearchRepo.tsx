@@ -143,7 +143,8 @@ const SearchRepo = () => {
         `https://api.github.com/repos/${owner}/${repoName}`,
         {
           headers: {
-            Authorization: `token ${GITHUB_TOKEN}`,
+            Accept: "application/vnd.github.v3+json",
+            Authorization: `Bearer ${GITHUB_TOKEN}`, // Always add authorization since we need it for private repos
           },
         }
       );
