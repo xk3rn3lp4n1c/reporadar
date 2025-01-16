@@ -152,7 +152,7 @@ const SearchRepo = () => {
       const config = {
         headers: {
           Accept: "application/vnd.github.v3+json",
-          Authorization: `${GITHUB_TOKEN}`,
+          Authorization: GITHUB_TOKEN,
         },
       };
 
@@ -367,7 +367,7 @@ const SearchRepo = () => {
                 ).reduce((acc, bytes) => acc + bytes, 0);
                 const percentage = ((bytes / totalBytes) * 100).toFixed(1);
                 return (
-                  <Badge className="text-xs rounded-full" variant={"secondary"}>
+                  <Badge key={language} className="text-xs rounded-full" variant={"secondary"}>
                     {language}
                     <span className="text-xs ml-2 text-gray-600">
                       {percentage}%
